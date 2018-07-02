@@ -1,0 +1,20 @@
+{
+  "name": "small-losses",
+  "version": "1.0.0",
+  "description": "peer2peer",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "peer2peer"
+  ],
+  "author": "huoxu_huoxu",
+  "license": "ISC",
+  "dependencies": {
+    "rimraf": "^2.6.2"
+  }
+}
