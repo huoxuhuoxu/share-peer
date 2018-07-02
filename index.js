@@ -4,16 +4,11 @@ const readline = require("readline");
 
 const { ADDRESS } = require("./config");
 const { create_keys } = require("./lib/keys");
-const { error, log, info } = require("./lib/outputs");
-
+const { error, log } = require("./lib/outputs");
+const { end } = require("./lib/tools");
+ 
 
 {
-
-    const end = (a_msg, fn_output) => {
-        a_msg.unshift("");
-        a_msg.forEach( s => fn_output(s) );
-        process.exit(0);
-    };
 
     const keys_path = path.resolve(__dirname, ADDRESS);
     if (fs.existsSync(keys_path) && 
@@ -21,7 +16,7 @@ const { error, log, info } = require("./lib/outputs");
         fs.existsSync(path.resolve(keys_path, "./keys.pub"))
     ){
 
-        log("开始启动 ...");
+        require("./peer/main");
     
     } else {
     
@@ -41,7 +36,6 @@ const { error, log, info } = require("./lib/outputs");
         rl.question(question_list.join("\r\n"), answer => {
 
             let reply_list = [];
-            reply_list.log = info;
 
             try {
 
@@ -61,7 +55,7 @@ const { error, log, info } = require("./lib/outputs");
                                 `\t1.是否支持openssl`,
                                 `\t2.是否执行npm install, 安装运行所需模块`
                             ];
-                            throw Error(reply_list.join());
+                            throw { message: reply_list };
                         }
                         
                     break;
@@ -72,20 +66,19 @@ const { error, log, info } = require("./lib/outputs");
                         ];
                     break;
                     case "3": 
-                        reply_list = ["请手动修改目录下 config.js 的 ADDRESS 字段, 此字段表示公私钥所在目录路径" ];
+                        reply_list = [ "请手动修改目录下 config.js 的 ADDRESS 字段, 此字段表示公私钥所在目录路径" ];
                     break;
                     default: 
-                        reply_list = [ "输入序号错误" ];
-                        throw Error(reply_list.join());
+                        throw Error("输入序号错误");
                 }
 
             } catch (err){
 
-                end(reply_list, error);
+                end(err.message, error);
             
             }
             
-            end(reply_list, info);
+            end(reply_list);
 
         });
     }

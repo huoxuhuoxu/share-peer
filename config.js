@@ -1,4 +1,9 @@
-module.exports = {
-    ADDRESS: ".keys"
+
+const config = {
+    ADDRESS: ".keys",
+    PORT: 34001
 };
+
+
+module.exports = config;
 
