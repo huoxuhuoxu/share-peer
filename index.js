@@ -3,9 +3,8 @@ const path = require("path");
 const readline = require("readline");
 
 const { ADDRESS } = require("./config");
-const { create_keys } = require("./lib/keys");
-const { error, log } = require("./lib/outputs");
-const { end } = require("./lib/tools");
+const { error } = require("./lib/outputs");
+const { end, create_keys } = require("./lib/tools");
  
 
 {

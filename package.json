@@ -7,7 +7,8 @@
     "lib": "lib"
   },
   "scripts": {
-    "start": "node index"
+    "start": "node index",
+    "test": "./node_modules/mocha/bin/mocha test"
   },
   "keywords": [
     "peer2peer"
@@ -15,6 +16,10 @@
   "author": "huoxu_huoxu",
   "license": "ISC",
   "dependencies": {
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "ursa": "^0.9.4"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
   }
 }
