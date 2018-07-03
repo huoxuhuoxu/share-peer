@@ -29,20 +29,13 @@ class App {
     __get_network (){
 
         const networks = os.networkInterfaces();
-        const ens = [];
-        let i = 0, b_pub;
-        let network = networks[`en${i}`];
+        const arr = [], net_name = /(en|eth)/;
+        let b_pub;
 
-        do {
-
-            i++;
-
-            if (network){
-
-                const address = network[1]["address"];
-                ens.push(network);
-                network = networks[`en${i}`];
-
+        for (let [ key, network ] of Object.entries(networks)){
+            if (net_name.test(key)){
+                const address = network[1] ? network[1]["address"] : network[0]["address"];
+                arr.push(network);
                 let [ a, b ,c ] = address.split(".");
                 a = +a, b = +b, c = +c;
                 if ( 
@@ -54,14 +47,12 @@ class App {
                 }
                 
                 b_pub = true;
-
             }
-
-        } while(network);
+        }
 
         return {
             is_pub: !!b_pub,
-            networks: ens
+            networks: arr
         };
     }
 
@@ -79,7 +70,7 @@ class App {
         end([ err, "启动自检失败, 请检查公私钥文件 ..." ], error);
     }
 
-    console.log(app);
+    console.log(app, app.net_info.networks);
     
 }
 
