@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node index",
+    "single": "node index -c",
     "test": "./node_modules/mocha/bin/mocha test"
   },
   "keywords": [
