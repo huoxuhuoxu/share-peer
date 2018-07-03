@@ -7,6 +7,7 @@
 const dgram = require("dgram");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 const { PORT, ADDRESS } = require("../config");
 const { error, info } = require("../lib/outputs");
@@ -19,7 +20,49 @@ let app;
 class App {
 
     constructor (pub_keys){
+
         this.pub_keys = pub_keys;
+        this.net_info = this.__get_network();  
+
+    }
+
+    __get_network (){
+
+        const networks = os.networkInterfaces();
+        const ens = [];
+        let i = 0, b_pub;
+        let network = networks[`en${i}`];
+
+        do {
+
+            i++;
+
+            if (network){
+
+                const address = network[1]["address"];
+                ens.push(network);
+                network = networks[`en${i}`];
+
+                let [ a, b ,c ] = address.split(".");
+                a = +a, b = +b, c = +c;
+                if ( 
+                    ( a === 10 ) ||
+                    ( a === 172 && b <= 31 && b>= 16 ) ||
+                    ( a === 192 && b === 168 && c >=0 && c <= 255 ) 
+                ){
+                    continue;
+                }
+                
+                b_pub = true;
+
+            }
+
+        } while(network);
+
+        return {
+            is_pub: !!b_pub,
+            networks: ens
+        };
     }
 
 }
@@ -28,15 +71,15 @@ class App {
 {
 
     const pub_keys = fs.readFileSync(path.resolve(__dirname, "../", `${ADDRESS}/keys.pub`));
-
-    app = new App(pub_keys);
-    app.pub_keys = pub_keys.toString().split("\n").slice(1, 5).join("\n") + "\n";
+    app = new App(pub_keys.toString().split("\n").slice(1, 5).join("\n") + "\n");
 
     try {
         rsa.decrypt(rsa.encrypt("self check", app.pub_keys));
     } catch(err){
         end([ err, "启动自检失败, 请检查公私钥文件 ..." ], error);
     }
+
+    console.log(app);
     
 }
 
