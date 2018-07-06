@@ -1,9 +1,10 @@
 
 const config = {
-    ADDRESS: ".keys",
+    KEYS_ADDRESS: ".keys",
     PORT: 34001,
     INIT_PUB_ADDRESS: "120.26.94.5:34001"
 };
+
 
 const debug = Object.create(null);
 debug["1"] = Object.assign({}, config, {

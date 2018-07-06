@@ -3,7 +3,7 @@ const os = require("os");
 const dgram = require("dgram");
 
 const { end, test } = require("../lib/tools");
-const { error, info } = require("../lib/outputs");
+const { error, info, log } = require("../lib/outputs");
 
 /**
  * @class Udp
@@ -72,8 +72,9 @@ class Udp {
         });
     }
 
-    send (...argv){
-        this.__socket.send(...argv);
+    send (data, ...argv){
+        const message = Buffer.from(JSON.stringify(data));
+        this.__socket.send(message, ...argv);
     }
 
     use (fn){
@@ -87,7 +88,7 @@ class Udp {
 
 class App extends Udp {
 
-    constructor (pub_key){
+    constructor (init_address, pub_key){
         
         super();
 
@@ -96,7 +97,8 @@ class App extends Udp {
         };
 
         this.net = {
-            info: this.__get_network()
+            mine: this.__get_network(),
+            init_address
         };
 
         this.env = this.__get_env();
@@ -166,6 +168,22 @@ class App extends Udp {
         }
 
         return tmp;
+    }
+
+    run (){
+        if (!this.argv.c){
+            const data = {
+                name: "connection/auth",
+                data: {
+                    test: "xxx"
+                }
+            };
+            const [ ip, port ] = this.net.init_address.split(":");
+            this.send(data, +port, ip, (err) => {
+                if (err) throw err;
+                log("发送成功");
+            });
+        }
     }
 
 }

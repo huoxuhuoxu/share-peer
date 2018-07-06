@@ -2,14 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 
-const { ADDRESS } = require("./config");
+const { KEYS_ADDRESS } = require("./config");
 const { error } = require("./lib/outputs");
 const { end, create_keys } = require("./lib/tools");
  
 
 {
 
-    const keys_path = path.resolve(__dirname, ADDRESS);
+    const keys_path = path.resolve(__dirname, KEYS_ADDRESS);
     if (fs.existsSync(keys_path) && 
         fs.existsSync(path.resolve(keys_path, "./private.pem")) && 
         fs.existsSync(path.resolve(keys_path, "./keys.pub"))
@@ -60,12 +60,12 @@ const { end, create_keys } = require("./lib/tools");
                     break;
                     case "2": 
                         reply_list = [
-                            `1.请手动在目录下建立 ${ADDRESS} 目录`,
-                            `2.将公私钥复制进 ${ADDRESS} 目录`
+                            `1.请手动在目录下建立 ${KEYS_ADDRESS} 目录`,
+                            `2.将公私钥复制进 ${KEYS_ADDRESS} 目录`
                         ];
                     break;
                     case "3": 
-                        reply_list = [ "请手动修改目录下 config.js 的 ADDRESS 字段, 此字段表示公私钥所在目录路径" ];
+                        reply_list = [ "请手动修改目录下 config.js 的 KEYS_ADDRESS 字段, 此字段表示公私钥所在目录路径" ];
                     break;
                     default: 
                         throw Error("输入序号错误");

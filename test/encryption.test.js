@@ -9,7 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-const { ADDRESS } = require("../config");
+const { KEYS_ADDRESS } = require("../config");
 const { rsa } = require("../lib/encryption");
 
 const str = "testing";
@@ -41,7 +41,7 @@ describe("网络来源公私钥测试", () => {
     it ("私钥加密, 公钥验签", done => {
 
         const rl = readline.createInterface({
-            input: fs.createReadStream(path.resolve(__dirname, "../", ADDRESS, "./keys.pub")),
+            input: fs.createReadStream(path.resolve(__dirname, "../", KEYS_ADDRESS, "./keys.pub")),
             crlfDelay: Infinity
         });
 
