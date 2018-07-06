@@ -67,14 +67,14 @@ describe("解决密文、明文过长", () => {
 
     it ("分段加密", done => {
         const cipher = rsa.encrypt(big_str);
-        // console.log(cipher);
+        console.log(cipher);
         done();
     });
 
     it ("分段加密2", done => {
         const big_str = new Array(7).fill("我").join("");
         const cipher = rsa.encrypt(big_str);
-        // console.log(cipher);
+        console.log(cipher);
         done();
     });
 
