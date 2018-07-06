@@ -7,6 +7,7 @@
 const dgram = require("dgram");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 const { PORT, ADDRESS } = require("../config");
 const { error, info } = require("../lib/outputs");
@@ -21,7 +22,8 @@ let app;
 {
 
     const pub_key = fs.readFileSync(path.resolve(__dirname, "../", `${ADDRESS}/keys.pub`));
-    app = new App(pub_key.toString().split("\n").slice(1, 5).join("\n") + "\n");
+    const keys = pub_key.toString().split(os.EOL);
+    app = new App(keys.slice(1, keys.length-2).join(os.EOL) + os.EOL);
 
     try {
         rsa.decrypt(rsa.encrypt("self check", app.pub_keys));
