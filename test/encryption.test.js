@@ -55,7 +55,7 @@ describe("网络来源公私钥测试", () => {
             const cipher = rsa.privateEncrypt(str);
             rsa.publicDecrypt(cipher, pub_keys);
             done();
-        })
+        });
     });
 
 });
