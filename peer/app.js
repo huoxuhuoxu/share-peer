@@ -1,8 +1,23 @@
 
-// let app;
 const os = require("os");
+const dgram = require("dgram");
+
+const { end, test } = require("../lib/tools");
+const { error, info } = require("../lib/outputs");
 
 /**
+ * @class Udp
+ *      网络通信
+ * 
+ * @method
+ *      listening   绑定udp的端口
+ *      send        发送数据包
+ * 
+ * @attribute
+ *      trust_list      建立了隧道的可信节点信息
+ *      
+ * 
+ * 
  * @class App
  *      应用对象        
  *  
@@ -14,9 +29,67 @@ const os = require("os");
  * 
  */
 
-class App {
+
+class Udp {
+
+    constructor (){
+        this.trust_list = new Set();
+        this.use_list = [];
+    }
+
+    listening (port, ip = "0.0.0.0"){
+
+        const socket = dgram.createSocket("udp4");
+
+        socket.on("error", (err) => {
+            socket.close();
+            end(err.stack, error);
+        });
+        
+        socket.on("message", (msg, rinfo) => {
+            for (const fn of this.use_list){
+                try {
+                    fn(this, msg, rinfo);
+                } catch (err){
+                    error(err);
+                    return ;
+                }
+            }
+        });
+        
+        socket.on("listening", () => {
+            const address = socket.address();
+            info(`服务器监听 ${address.address}:${address.port}`);
+        });
+
+        socket.bind(port, ip);
+
+        Object.defineProperty(this, "__socket", {
+            writable: true,
+            configurable: false,
+            enumerable: false,
+            value: socket
+        });
+    }
+
+    send (...argv){
+        this.__socket.send(...argv);
+    }
+
+    use (fn){
+        if (!test.isFunction(fn)){
+            end("use 接收 function 型");
+        }
+        this.use_list.push(fn);
+    }
+
+}
+
+class App extends Udp {
 
     constructor (pub_key){
+        
+        super();
 
         this.keys = {
             pub_key: pub_key

@@ -9,6 +9,8 @@
   "scripts": {
     "start": "node index",
     "single": "node index -c",
+    "debug_1": "DEBUG=1 node index -c",
+    "debug_2": "DEBUG=2 node index",
     "test": "./node_modules/mocha/bin/mocha test"
   },
   "keywords": [
