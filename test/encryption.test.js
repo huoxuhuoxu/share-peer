@@ -4,7 +4,12 @@
  * 
  */
 const assert = require("assert");
+const readline = require("readline");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
+const { ADDRESS } = require("../config");
 const { rsa } = require("../lib/encryption");
 
 const str = "testing";
@@ -32,16 +37,25 @@ describe("本地公私钥测试", () => {
 
 describe("网络来源公私钥测试", () => {
 
-    const pub_keys = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsSYRt15IzjmTq85sfFv3mxonN" + "\n" +
-    "hhG/celBAfvy/iUfXYdBqy5HcT0gOEas+ZxJkjRscVQB34XWl4dTq/87LHe59fH7" + "\n" +
-    "s5NebL4IgVBeebJWvpA8WT7w085r90oHK5zten4X3umDSZDm8slHK435ewHYe2sx" + "\n" +
-    "AmxG+TEHz3/TXERf+QIDAQAB" + "\n";
-   
-
+    
     it ("私钥加密, 公钥验签", (done) => {
-        const cipher = rsa.privateEncrypt(str);
-        rsa.publicDecrypt(cipher, pub_keys);
-        done();
+
+        const rl = readline.createInterface({
+            input: fs.createReadStream(path.resolve(__dirname, "../", ADDRESS, "./keys.pub")),
+            crlfDelay: Infinity
+        });
+
+        let pub_keys = '';
+
+        rl.on("line", (line) => {
+            if (line && !/--+.*--+/.test(line)){
+                pub_keys += line + os.EOL;
+            }
+        }).on("close", () => {
+            const cipher = rsa.privateEncrypt(str);
+            rsa.publicDecrypt(cipher, pub_keys);
+            done();
+        })
     });
 
 });
