@@ -111,6 +111,11 @@ const __generate_udp_head = (action) => {
     };
 };
 
+const __data_normalization = (udp_data) => {
+    const data = JSON.parse(udp_data.toString());
+    return data;
+};
+
 class Udp {
 
     constructor (){
@@ -129,6 +134,8 @@ class Udp {
         
         socket.on("message", (msg, rinfo) => {
             let i = 0;
+            msg = __data_normalization(msg);
+            
             const next = (err) => {
                 try {
                     let fn = this.use_list[i];

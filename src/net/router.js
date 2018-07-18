@@ -4,10 +4,7 @@
  * 
  */
 
-const data_normalization = (udp_data) => {
-    const data = JSON.parse(udp_data.toString());
-    return data;
-};
+
 
 class Router {
 
@@ -28,12 +25,12 @@ class Router {
     }
 
     __start (peer, udp_data, rinfo, next){
-        const { head, body } = data_normalization(udp_data);
+        const { head, body } = udp_data;
         const action = this.actions.get(head.action);
         if (action){
             action.cb(peer, body, rinfo, next);
         } else {
-            next(Error(`无法识别的动作: ${head.name}`));
+            next();
         }
     }
 

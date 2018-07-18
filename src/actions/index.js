@@ -1,4 +1,5 @@
 
 module.exports = {
-    verify: require("./verification")
+    verify: require("./verification"),
+    mws: require("./middlewares")
 };
