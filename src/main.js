@@ -59,6 +59,8 @@ const {
         let b = false;
         port = +port;
 
+        console.log(is_pub);
+
         if (is_pub){
             for (let network of peer.net.mine.networks){
                 if (address === network["address"] && port === PORT){
@@ -70,7 +72,7 @@ const {
             if ((address === "127.0.0.1" && port === PORT)) b = true;
         }
 
-        console.log(address, port);
+        console.log(address, port, b);
 
         if (b) next(Error("You can't send data to yourself"));
         else next();
