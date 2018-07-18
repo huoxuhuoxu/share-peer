@@ -13,7 +13,7 @@ const {
     encryption: { rsa }
 } = require("../lib");
  
-exports.apply_channel = (peer, { ct, pub_key, is_pub }, { address, port }, next) => {
+exports.apply_channel = (peer, { ct, pub_key, is_pub }, { address, port }) => {
     const resul = rsa.publicDecrypt(ct, pub_key);
     const origin = `${address}:${port}`;
 
