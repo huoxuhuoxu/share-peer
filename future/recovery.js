@@ -5,7 +5,7 @@ const crypto = require("crypto");
 // 尝试将 私钥 转换成 12 个单词, 丢失私钥情况下, 通过单词找回私钥 .
 // 结论: 这种方式不行, 加密出来的比明文更长, 无法做转换 ...
 
-const txt = fs.readFileSync("./.keys/private.pem").toString();
+const txt = fs.readFileSync("../.keys/private.pem").toString();
 const list = txt.split("/").map(s => s.replace(/---*.*---*\n/, ""));
 console.log(list, list.length);
 

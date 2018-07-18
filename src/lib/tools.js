@@ -10,12 +10,23 @@ const fs = require("fs");
 
 const rimraf = require("rimraf");
 
+const { ROOT_PATH, KEYS_ADDRESS } = require("../../config");
 const { info } = require("./outputs");
-const { KEYS_ADDRESS } = require("../config");
+
+exports.exists_keys = () => {
+    const keys_path = path.resolve(ROOT_PATH, KEYS_ADDRESS);
+    if (fs.existsSync(keys_path) && 
+        fs.existsSync(path.resolve(keys_path, "./private.pem")) && 
+        fs.existsSync(path.resolve(keys_path, "./keys.pub"))
+    ) 
+        return keys_path;
+    else 
+        return false;
+};
 
 exports.create_keys = () => {
     
-    const keys_path = path.resolve(__dirname, "../", KEYS_ADDRESS);
+    const keys_path = path.resolve(ROOT_PATH, KEYS_ADDRESS);
 
     if (fs.existsSync(keys_path)){
         rimraf.sync(keys_path);
@@ -26,7 +37,7 @@ exports.create_keys = () => {
         stdio: "ignore"
     };
     
-    child_Process.execFileSync(path.resolve(__dirname, "../.init/create_keys.sh"), [ keys_path ], option);
+    child_Process.execFileSync(path.resolve(ROOT_PATH, ".init/create_keys.sh"), [ keys_path ], option);
 
 };
 

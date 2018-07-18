@@ -2,8 +2,11 @@
 const os = require("os");
 const dgram = require("dgram");
 
-const { end, test } = require("../lib/tools");
-const { error, info, log } = require("../lib/outputs");
+const {
+    tools: { end, test },
+    outputs: { error, info, log }
+} = require("../lib");
+
 
 /**
  * @class Udp
@@ -18,7 +21,7 @@ const { error, info, log } = require("../lib/outputs");
  *      
  * 
  * 
- * @class App
+ * @class UdpPeer
  *      应用对象        
  *  
  * @attribute
@@ -86,7 +89,7 @@ class Udp {
 
 }
 
-class App extends Udp {
+class UdpPeer extends Udp {
 
     constructor (init_address, pub_key){
         
@@ -189,6 +192,5 @@ class App extends Udp {
 }
 
 
-module.exports = App;
-
+module.exports = UdpPeer;
 

@@ -13,8 +13,8 @@ const os = require("os");
 
 const ursa = require("ursa");
 
-const { KEYS_ADDRESS } = require("../config");
-const keys_path = path.resolve(__dirname, "../", KEYS_ADDRESS);
+const { KEYS_ADDRESS, ROOT_PATH } = require("../../config");
+const keys_path = path.resolve(ROOT_PATH, KEYS_ADDRESS);
 const private_key = fs.readFileSync(path.resolve(keys_path, "private.pem"));
 const public_key = fs.readFileSync(path.resolve(keys_path, "keys.pub"));
 

@@ -1,21 +1,24 @@
-const fs = require("fs");
-const path = require("path");
+/**
+ * @description
+ *  point
+ * 
+ */
+
 const readline = require("readline");
 
 const { KEYS_ADDRESS } = require("./config");
-const { error } = require("./lib/outputs");
-const { end, create_keys } = require("./lib/tools");
  
+const {
+    outputs: { error },
+    tools: { end, create_keys, exists_keys }
+} = require("./src/lib");
 
 {
 
-    const keys_path = path.resolve(__dirname, KEYS_ADDRESS);
-    if (fs.existsSync(keys_path) && 
-        fs.existsSync(path.resolve(keys_path, "./private.pem")) && 
-        fs.existsSync(path.resolve(keys_path, "./keys.pub"))
-    ){
-
-        require("./peer/main");
+    const keys_path = exists_keys();
+    if (keys_path){
+        
+        require("./src/main");
     
     } else {
     

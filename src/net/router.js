@@ -4,7 +4,9 @@
  * 
  */
 
-const { warn } = require("../lib/outputs");
+const { 
+    outputs: { warn } 
+} = require("../lib");
 
 const data_normalization = (udp_data) => {
     const data = JSON.parse(udp_data.toString());
