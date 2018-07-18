@@ -55,9 +55,20 @@ const {
 
     // 检查: 禁止 向自己发送数据报 
     peer.use((peer, { is_pub }, { address, port }, next) => {
-        const b = is_pub ? 
-            (address === peer.net.mine.networks[0]["address"] && +port === PORT) : 
-            (address === "127.0.0.1" && +port === PORT) ;
+
+        let b = false;
+        port = +port;
+
+        if (is_pub){
+            for (let network of peer.net.mine.networks){
+                if (address === network["address"] && port === PORT){
+                    b = true;
+                    break;
+                }
+            }
+        } else {
+            if ((address === "127.0.0.1" && port === PORT)) b = true;
+        }
 
         console.log(address, port);
 
