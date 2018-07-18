@@ -177,6 +177,8 @@ class Udp {
             port,
             is_pub
         });
+
+        console.log(this.trust_list);
     }
 
 }
