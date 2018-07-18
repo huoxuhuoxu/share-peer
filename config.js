@@ -1,6 +1,7 @@
 
 const config = {
     KEYS_ADDRESS: ".keys",
+    INIT_ADDRESS: ".init",
     PORT: 34001,
     INIT_PUB_ADDRESS: "120.26.94.5:34001",
     ROOT_PATH: __dirname

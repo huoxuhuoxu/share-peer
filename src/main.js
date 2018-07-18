@@ -17,8 +17,8 @@ const {
 } = require("../config");
 
 const {
-    outputs: { error },
-    tools: { end },
+    outputs: { error, log },
+    tools: { end, save_file },
     encryption: { rsa }
 } = require("./lib");
 
@@ -72,7 +72,30 @@ const {
 
     // 申请加入网络
     peer.send_apply();
+ 
     
+    
+    // 进程异常
+    (() => {
+        const quit_process = (signal) => {
+            process.on(signal, () => {
+                if (peer.trust_list.size){
+                    let tmp = {};
+                    for (let [ key, value ] of peer.trust_list){
+                        tmp[key] = value;
+                    }
+                    save_file(`peers-${PORT}.json`, tmp);
+                }
+                log("接收到信号: ", signal);
+                process.exit(0);
+            });
+        };
+        const signals = [ "SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK" ];
+        signals.forEach(s => {
+            quit_process(s);
+        });
+    })();
+
 }
 
 

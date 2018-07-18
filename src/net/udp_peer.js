@@ -3,7 +3,7 @@ const os = require("os");
 const dgram = require("dgram");
 
 const {
-    tools: { end, test },
+    tools: { end, test, loaded_file },
     outputs: { error, info, log },
     encryption: { rsa }
 } = require("../lib");
@@ -21,6 +21,7 @@ const {
  * @attribute
  *      trust_list      建立了隧道的可信节点信息
  *      use_list        存储中间件
+ *      ready           处理加入网络状态, 未完成
  *      
  * 
  * 
@@ -116,11 +117,23 @@ const __data_normalization = (udp_data) => {
     return data;
 };
 
+const __init_peers_info = (self, port) => {
+    const peers_info = loaded_file(`.init/peers-${port}.json`);
+    if (peers_info){
+        let tmp = [];
+        for (let [k, v] of Object.entries(peers_info)){
+            tmp.push([k, v]);
+        }
+        self.trust_list = new Map(tmp);
+    }
+};
+
 class Udp {
 
     constructor (){
         this.trust_list = new Map();
         this.use_list = [];
+        this.ready = false;
     }
 
     listening (port, ip = "0.0.0.0"){
@@ -135,7 +148,8 @@ class Udp {
         socket.on("message", (msg, rinfo) => {
             let i = 0;
             msg = __data_normalization(msg);
-            
+
+            // 之后可以改 generator 形式的洋葱模型
             const next = (err) => {
                 try {
                     let fn = this.use_list[i];
@@ -172,6 +186,9 @@ class Udp {
             enumerable: false,
             value: socket
         });
+
+        __init_peers_info(this, port);
+
     }
 
     send (body, action, ...argv){
@@ -198,14 +215,13 @@ class Udp {
         this.use_list.push(fn);
     }
 
-    set trust_peers ({ pub_key, address, port, is_pub }){
+    set trust_peers ({ pub_key, address, port, is_pub, origin = null }){
         this.trust_list.set(pub_key, {
             address,
             port,
-            is_pub
+            is_pub,
+            origin
         });
-
-        console.log(this.trust_list);
     }
 
 }
@@ -232,6 +248,11 @@ class UdpPeer extends Udp {
 
     send_apply (point_address = this.net.init_address){
         if (!this.argv.c){
+
+            // 这里做判断, 如果列表中存在可信任的公网节点, 直接找公网节点 ...
+            // ...
+            // 还需要 消息反馈超时 ....
+
             const [ ip, port ] = point_address.split(":");
             this.send({
                 ct: rsa.privateEncrypt(Date.now().toString())

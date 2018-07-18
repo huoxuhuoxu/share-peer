@@ -2,6 +2,13 @@
  * @description
  *  通用函数
  * 
+ * @method
+ *  exists_keys     检查公私钥文件是否存在
+ *  create_keys     创建公私钥
+ *  end             显示错误并退出进程
+ *  test            检验数据类型
+ *   
+ * 
  */
 
 const child_Process = require("child_process");
@@ -10,8 +17,8 @@ const fs = require("fs");
 
 const rimraf = require("rimraf");
 
-const { ROOT_PATH, KEYS_ADDRESS } = require("../../config");
-const { info } = require("./outputs");
+const { ROOT_PATH, KEYS_ADDRESS, INIT_ADDRESS } = require("../../config");
+const { info, log } = require("./outputs");
 
 exports.exists_keys = () => {
     const keys_path = path.resolve(ROOT_PATH, KEYS_ADDRESS);
@@ -37,7 +44,7 @@ exports.create_keys = () => {
         stdio: "ignore"
     };
     
-    child_Process.execFileSync(path.resolve(ROOT_PATH, ".init/create_keys.sh"), [ keys_path ], option);
+    child_Process.execFileSync(path.resolve(ROOT_PATH, INIT_ADDRESS, "create_keys.sh"), [ keys_path ], option);
 
 };
 
@@ -53,7 +60,7 @@ exports.end = (a_msg, fn_output = info, b_exit = true) => {
     b_exit && process.exit(0);
 };
 
-module.exports.test = (() => {
+exports.test = (() => {
 
     const type_arr = [
         "Function",
@@ -84,4 +91,22 @@ module.exports.test = (() => {
     return tmp;
 
 })();
+
+exports.save_file = (file_name, data) => {
+    fs.writeFileSync(path.resolve(ROOT_PATH, INIT_ADDRESS, file_name), JSON.stringify(data, null, "\t"));
+};
+
+exports.loaded_file = (file_name, type = "JSON") => {
+    const file_path = path.resolve(ROOT_PATH, file_name);
+    if (fs.existsSync(file_path)){
+        let data;
+        switch (type){
+            case "JSON": data = require(file_path);
+            break;
+            default:
+                log("未处理文件类型: ", type);
+        }
+        return data;
+    }
+};
 
