@@ -50,7 +50,11 @@ const {
     router.set("verify/apply_channel", apply_channel);
     router.set("verify/verify_info", verify_info);
 
-    // console.log(peer, peer.net.mine.networks);
+    console.log(peer, peer.net.mine.networks);
+
+    peer.use((peer, data, {address, port }) => {
+        console.log(address, port);
+    });
 
     peer.use(router.route());
     peer.listening(PORT);
