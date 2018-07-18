@@ -27,6 +27,9 @@ const {
     Router
 } = require("./net");
 
+const {
+    verify: { apply_channel, verify_info }
+} = require("./actions");
 
 {
 
@@ -44,17 +47,17 @@ const {
 
     const router = new Router();
     
-    router.set("connection/auth", (peer, data) => {
-        console.log(peer);
-        console.log(data);
-    });
+    router.set("verify/apply_channel", apply_channel);
+    router.set("verify/verify_info", verify_info);
 
-    // console.log(peer, peer.net.info.networks);
+    // console.log(peer, peer.net.mine.networks);
 
     peer.use(router.route());
     peer.listening(PORT);
-    peer.run();
 
+    // 申请加入网络
+    peer.send_apply();
+    
 }
 
 

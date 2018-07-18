@@ -31,13 +31,15 @@ class Router {
         return this.__start.bind(this);
     }
 
-    __start (app, udp_data, rinfo){
-        const data = data_normalization(udp_data);
-        const action = this.actions.get(data.name);
-        if (action)
-            action.cb(app, data, rinfo);
-        else
-            warn("无法识别的动作: ", data.name);
+    __start (peer, udp_data, rinfo){
+        const { head, body } = data_normalization(udp_data);
+        const action = this.actions.get(head.action);
+        if (action){
+            return action.cb(peer, body, rinfo) || true;
+        } else
+            warn("无法识别的动作: ", head.name);
+
+        return false;
     }
 
 } 
