@@ -38,7 +38,7 @@ const {
 
     const peer = new UdpPeer(INIT_PUB_ADDRESS, keys.slice(1, keys.length-2).join(os.EOL) + os.EOL);
 
-    // console.log(peer, peer.net.mine.networks);
+    console.log(peer.net.mine.networks);
 
     // 自检
     try {
