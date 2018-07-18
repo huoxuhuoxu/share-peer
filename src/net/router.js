@@ -4,10 +4,6 @@
  * 
  */
 
-const { 
-    outputs: { warn } 
-} = require("../lib");
-
 const data_normalization = (udp_data) => {
     const data = JSON.parse(udp_data.toString());
     return data;
@@ -31,15 +27,14 @@ class Router {
         return this.__start.bind(this);
     }
 
-    __start (peer, udp_data, rinfo){
+    __start (peer, udp_data, rinfo, next){
         const { head, body } = data_normalization(udp_data);
         const action = this.actions.get(head.action);
         if (action){
-            return action.cb(peer, body, rinfo) || true;
-        } else
-            warn("无法识别的动作: ", head.name);
-
-        return false;
+            action.cb(peer, body, rinfo, next);
+        } else {
+            next(Error(`无法识别的动作: ${head.name}`));
+        }
     }
 
 } 

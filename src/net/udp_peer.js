@@ -45,9 +45,15 @@ const __get_network = () => {
 
     for (let [ key, network ] of Object.entries(networks)){
         if (net_name.test(key)){
-            const address = network[1] ? network[1]["address"] : network[0]["address"];
-            arr.push(network);
-            let [ a, b ,c ] = address.split(".");
+            // const address = network[1] ? network[1]["address"] : network[0]["address"];
+            let local_network;
+            for (let item of network){
+                if (item.family === "IPv4"){
+                    local_network = item;
+                }
+            }
+            arr.push(local_network);
+            let [ a, b ,c ] = local_network["address"].split(".");
             a = +a, b = +b, c = +c;
             if ( 
                 ( a === 10 ) ||
@@ -122,14 +128,28 @@ class Udp {
         });
         
         socket.on("message", (msg, rinfo) => {
-            for (const fn of this.use_list){
+            let i = 0;
+            const next = (err) => {
                 try {
-                    const b = fn(this, msg, rinfo);
-                    if (!b) return;
+                    let fn = this.use_list[i];
+                    if (fn){
+                        i++;
+                        if (err && fn.length === 5){
+                            return fn(err, this, msg, rinfo, next);
+                        }
+                        if (err){
+                            return next(err);
+                        }
+                        if (fn.length !== 5){
+                            return fn(this, msg, rinfo, next);
+                        }
+                    }
                 } catch (err){
-                    return error(err);
+                    next(err);
                 }
-            }
+                if (err) throw err;
+            };
+            next();            
         });
         
         socket.on("listening", () => {
@@ -158,7 +178,7 @@ class Udp {
         const message = Buffer.from(JSON.stringify(data));
         this.__socket.send(message, ...argv, (err) => {
             if (err) throw err;
-            log("发生成功", action);
+            log("发送成功", action);
         });
     }
 

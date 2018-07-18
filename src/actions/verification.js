@@ -13,7 +13,7 @@ const {
     encryption: { rsa }
 } = require("../lib");
  
-exports.apply_channel = (peer, { ct, pub_key, is_pub }, { address, port }) => {
+exports.apply_channel = (peer, { ct, pub_key, is_pub }, { address, port }, next) => {
     const resul = rsa.publicDecrypt(ct, pub_key);
     const origin = `${address}:${port}`;
 
@@ -26,7 +26,6 @@ exports.apply_channel = (peer, { ct, pub_key, is_pub }, { address, port }) => {
         };
 
         peer.verify_info(ct, address, port);
-
         return log(`验证通过: ${origin}`);
     }
 
