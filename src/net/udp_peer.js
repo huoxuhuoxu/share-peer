@@ -4,7 +4,7 @@ const dgram = require("dgram");
 
 const {
     tools: { end, test, loaded_file },
-    outputs: { error, info, log },
+    outputs: { error, info, log, warn },
     encryption: { rsa }
 } = require("../lib");
 
@@ -21,6 +21,7 @@ const {
  * @attribute
  *      trust_list      建立了隧道的可信节点信息
  *      use_list        存储中间件
+ *      fail_list       失败 / 无响应的节点
  *      ready           处理加入网络状态, 未完成
  *      
  * 
@@ -105,9 +106,11 @@ const __get_env = () => {
     return tmp;
 };
 
-const __generate_udp_head = (action) => {
+const __generate_udp_head = (com_action) => {
+    const [ type, action ] = com_action.split("/");
     return {
         version: "1.0.0",
+        type,
         action
     };
 };
@@ -118,7 +121,7 @@ const __data_normalization = (udp_data) => {
 };
 
 const __init_peers_info = (self, port) => {
-    const peers_info = loaded_file(`.init/peers-${port}.json`);
+    const peers_info = loaded_file(`peers/${port}.json`);
     if (peers_info){
         let tmp = [];
         for (let [k, v] of Object.entries(peers_info)){
@@ -128,12 +131,62 @@ const __init_peers_info = (self, port) => {
     }
 };
 
+
+class Subscribe {
+
+    constructor (){
+        
+        Object.defineProperty(this, "__subscribe", {
+            writable: false,
+            configurable: false,
+            enumerable: false,
+            value: new Map()
+        });
+
+    }
+
+    add (event_name, event_fn, b_once = true){
+        
+        let tmp;
+        if (this.__subscribe.has(event_name)){
+            tmp = this.__subscribe.get(event_name);
+            tmp.push(event_fn);
+        } else {
+            tmp = [ event_fn ];
+            tmp.once = b_once;
+            this.__subscribe.set(event_name, tmp);
+        }
+        
+        return () => {
+            this.__subscribe.set(event_name, tmp.filter(v => v !== event_fn ));
+        };
+    }
+
+    dispatch (event_name){
+        if (this.__subscribe.has(event_name)){
+            let tmp = this.__subscribe.get(event_name);
+            tmp.forEach(fn => fn());
+            tmp.once && this.__subscribe.delete(event_name);
+        } else {
+            warn("no subscription", event_name);
+        }
+    }
+
+    size (){
+        return this.__subscribe.size;
+    }
+
+}
+
 class Udp {
 
     constructor (){
         this.trust_list = new Map();
         this.use_list = [];
+        this.fail_list = [];
         this.ready = false;
+
+        this.verifySub = new Subscribe();
     }
 
     listening (port, ip = "0.0.0.0"){
@@ -191,7 +244,7 @@ class Udp {
 
     }
 
-    send (body, action, ...argv){
+    send (body, action, port, address){
         const data = {
             head: __generate_udp_head(action),
             body: Object.assign({}, body, {
@@ -200,8 +253,19 @@ class Udp {
             })
         };
         const message = Buffer.from(JSON.stringify(data));
-        this.__socket.send(message, ...argv, (err) => {
-            if (err) throw err;
+        this.__socket.send(message, port, address, (err) => {
+            const s = `${address}:${port}`;
+            if (err) {
+                this.fail_list.push(s);
+                throw err;
+            }
+            let timer = setTimeout(() => {
+                this.verifySub.dispatch(s);
+            }, 5000);
+            this.verifySub.add(s, () => {
+                clearTimeout(timer);
+                timer = null;
+            });
             log("发送成功", action);
         });
     }
@@ -252,7 +316,6 @@ class UdpPeer extends Udp {
             // 这里做判断, 如果列表中存在可信任的公网节点, 直接找公网节点 ...
             // ...
             // 还需要 消息反馈超时 ....
-            // 考虑 ... 数据存储位置, 目前在 .init , 之后有其他的应该放别的位置
 
             const [ ip, port ] = point_address.split(":");
             this.send({

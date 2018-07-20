@@ -26,7 +26,7 @@ class Router {
 
     __start (peer, udp_data, rinfo, next){
         const { head, body } = udp_data;
-        const action = this.actions.get(head.action);
+        const action = this.actions.get(`${head.type}/${head.action}`);
         if (action){
             action.cb(peer, body, rinfo, next);
         } else {

@@ -53,6 +53,8 @@ const {
     router.set("verify/apply_channel", apply_channel);
     router.set("verify/verify_info", verify_info);
 
+    // 准备期, 无视非验证类型的数据报
+
     // 检查: 禁止 向自己发送数据报 
     peer.use(prohibit_to_own(PORT));
 
@@ -84,7 +86,7 @@ const {
                     for (let [ key, value ] of peer.trust_list){
                         tmp[key] = value;
                     }
-                    save_file(`peers-${PORT}.json`, tmp);
+                    save_file(`peers/${PORT}.json`, tmp);
                 }
                 log("接收到信号: ", signal);
                 process.exit(0);

@@ -17,7 +17,7 @@ const fs = require("fs");
 
 const rimraf = require("rimraf");
 
-const { ROOT_PATH, KEYS_ADDRESS, INIT_ADDRESS } = require("../../config");
+const { ROOT_PATH, KEYS_ADDRESS, INIT_ADDRESS, DATA_ADDRESS } = require("../../config");
 const { info, log } = require("./outputs");
 
 exports.exists_keys = () => {
@@ -92,16 +92,24 @@ exports.test = (() => {
 
 })();
 
-exports.save_file = (file_name, data) => {
-    fs.writeFileSync(path.resolve(ROOT_PATH, INIT_ADDRESS, file_name), JSON.stringify(data, null, "\t"));
+exports.save_file = (file_path, data) => {
+    const real_path = path.resolve(ROOT_PATH, DATA_ADDRESS, file_path);
+    const dir_path = path.dirname(real_path);
+    if (!fs.existsSync(DATA_ADDRESS)){
+        fs.mkdirSync(DATA_ADDRESS);
+    }
+    if (!fs.existsSync(dir_path)){
+        fs.mkdirSync(dir_path);
+    }
+    fs.writeFileSync(real_path, JSON.stringify(data, null, "\t"));
 };
 
-exports.loaded_file = (file_name, type = "JSON") => {
-    const file_path = path.resolve(ROOT_PATH, file_name);
-    if (fs.existsSync(file_path)){
+exports.loaded_file = (file_path, type = "JSON") => {
+    const real_path = path.resolve(ROOT_PATH, DATA_ADDRESS, file_path);
+    if (fs.existsSync(real_path)){
         let data;
         switch (type){
-            case "JSON": data = require(file_path);
+            case "JSON": data = require(real_path);
             break;
             default:
                 log("未处理文件类型: ", type);
