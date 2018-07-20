@@ -4,8 +4,9 @@ const dgram = require("dgram");
 
 const {
     tools: { end, test, loaded_file },
-    outputs: { error, info, log, warn },
-    encryption: { rsa }
+    outputs: { error, info, log },
+    encryption: { rsa },
+    Subscribe
 } = require("../lib");
 
 
@@ -13,30 +14,51 @@ const {
  * @class Udp
  *      网络通信
  * 
- * @method
+ *  @method
  *      listening   绑定udp的端口
  *      send        发送数据包
  *      use         定义中间件
  * 
- * @attribute
+ *  @attribute
  *      trust_list      建立了隧道的可信节点信息
+ *      trust_min       理论上最小需要保持的连接数
  *      use_list        存储中间件
  *      fail_list       失败 / 无响应的节点
  *      ready           处理加入网络状态, 未完成
+ *      __send_fail     udp head verify 失败的处理
  *      
  * 
  * 
  * @class UdpPeer
- *      应用对象        
+ *  应用对象        
  *  
- * @attribute
+ *  @attribute
  *      keys    密钥
  *      net     网络信息
  *      env     手动导入的环境变量
  *      argv    命令行选项、参数     
  * 
- * @method
+ *  @method
+ *      
  *      send_auth       申请加入网络
+ *      get_peers       获取其他存在于网络中的节点信息
+ * 
+ * 
+ * 
+ * @global
+ * 
+ *  @function
+ *      __get_network           获取本地网卡信息
+ *      __get_argv              获取命令行选项/参数
+ *      __get_env               获取环境变量
+ *      __generate_udp_head     生成udp消息头部
+ *      __data_normalization    将接收到的udp消息数据部分统一解码
+ *      __init_peers_info       读取本地存储其他节点信息
+ *
+ *       
+ *  @attribute
+ *      privater                私有属性集合
+ * 
  * 
  */
 
@@ -108,11 +130,19 @@ const __get_env = () => {
 
 const __generate_udp_head = (com_action) => {
     const [ type, action ] = com_action.split("/");
-    return {
-        version: "1.0.0",
-        type,
-        action
-    };
+    let res_action;
+    switch (com_action){
+        case "verify/apply_channel": res_action = "rverify/verify_info";
+        break;
+    }
+    return [
+        res_action,
+        {
+            version: "1.0.0",
+            type,
+            action
+        }
+    ];
 };
 
 const __data_normalization = (udp_data) => {
@@ -132,58 +162,19 @@ const __init_peers_info = (self, port) => {
 };
 
 
-class Subscribe {
-
-    constructor (){
-        
-        Object.defineProperty(this, "__subscribe", {
-            writable: false,
-            configurable: false,
-            enumerable: false,
-            value: new Map()
-        });
-
-    }
-
-    add (event_name, event_fn, b_once = true){
-        
-        let tmp;
-        if (this.__subscribe.has(event_name)){
-            tmp = this.__subscribe.get(event_name);
-            tmp.push(event_fn);
-        } else {
-            tmp = [ event_fn ];
-            tmp.once = b_once;
-            this.__subscribe.set(event_name, tmp);
-        }
-        
-        return () => {
-            this.__subscribe.set(event_name, tmp.filter(v => v !== event_fn ));
-        };
-    }
-
-    dispatch (event_name){
-        if (this.__subscribe.has(event_name)){
-            let tmp = this.__subscribe.get(event_name);
-            tmp.forEach(fn => fn());
-            tmp.once && this.__subscribe.delete(event_name);
-        } else {
-            warn("no subscription", event_name);
-        }
-    }
-
-    size (){
-        return this.__subscribe.size;
-    }
-
+const privater = new Map();
+{
+    privater.set("__send_fail", Symbol("send_fail"));
 }
 
 class Udp {
 
     constructor (){
         this.trust_list = new Map();
+        this.trust_min = 5;
+
         this.use_list = [];
-        this.fail_list = [];
+        this.fail_list = new Set();
         this.ready = false;
 
         this.verifySub = new Subscribe();
@@ -245,27 +236,42 @@ class Udp {
     }
 
     send (body, action, port, address){
+        const [ res_acrion, head ] = __generate_udp_head(action);
         const data = {
-            head: __generate_udp_head(action),
+            head,
             body: Object.assign({}, body, {
                 pub_key: this.keys.pub_key,
                 is_pub: this.net.mine.is_pub
             })
         };
+
+        // log
+        console.log("发送目标: %s:%s, 动作: ", address, port, action);
+
         const message = Buffer.from(JSON.stringify(data));
         this.__socket.send(message, port, address, (err) => {
             const s = `${address}:${port}`;
             if (err) {
-                this.fail_list.push(s);
+                this[privater.get("__send_fail")](s);
                 throw err;
             }
-            let timer = setTimeout(() => {
-                this.verifySub.dispatch(s);
-            }, 5000);
-            this.verifySub.add(s, () => {
-                clearTimeout(timer);
-                timer = null;
-            });
+            // 所有的反馈行为不做响应超时处理
+            if (res_acrion){
+
+                let event_name = `${s}-${res_acrion}`;
+
+                let timer = setTimeout(() => {
+                    this.verifySub.dispatch(event_name);
+                    this[privater.get("__send_fail")](s);
+                }, 5000);
+                
+                this.verifySub.add(event_name, () => {
+                    clearTimeout(timer);
+                    timer = null;
+                });
+            }
+            
+            
             log("发送成功", action);
         });
     }
@@ -286,6 +292,11 @@ class Udp {
             is_pub,
             origin
         });
+    }
+
+    [privater.get("__send_fail")] (s){
+        this.fail_list.add(s);
+        this.get_peers();
     }
 
 }
@@ -310,25 +321,41 @@ class UdpPeer extends Udp {
 
     }
 
+    // 申请加入网络
     send_apply (point_address = this.net.init_address){
         if (!this.argv.c){
 
-            // 这里做判断, 如果列表中存在可信任的公网节点, 直接找公网节点 ...
-            // ...
-            // 还需要 消息反馈超时 ....
+            let targets = new Set( [ point_address ] );
 
-            const [ ip, port ] = point_address.split(":");
-            this.send({
-                ct: rsa.privateEncrypt(Date.now().toString())
-            }, "verify/apply_channel", port, ip);
+            if (this.trust_list.size){
+                for (let [, v] of this.trust_list){
+                    v.is_pub && targets.add(`${v.address}:${v.port}`);
+                }
+            }
+
+            for (let s of targets){
+                let [ address, port ] = s.split(":");
+                this.send({
+                    ct: rsa.privateEncrypt(Date.now().toString())
+                }, "verify/apply_channel", port, address);
+            }       
+            
         }
     }
 
+    // 响应 - verify/apply_channel, 核对信息
     verify_info (origin_ct, address, port){
         this.send({
             ct: rsa.privateEncrypt(Date.now().toString()),
             origin_ct
-        }, "verify/verify_info", port, address);
+        }, "rverify/verify_info", port, address);
+    }   
+
+    // 获取其他 peers 信息
+    get_peers (){
+        if (!this.verifySub.size && this.trust_list.size < this.trust_min){
+            console.log("需要广播消息, 获取其他peer信息");
+        }
     }
 
 }

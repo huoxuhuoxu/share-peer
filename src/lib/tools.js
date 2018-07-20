@@ -7,7 +7,10 @@
  *  create_keys     创建公私钥
  *  end             显示错误并退出进程
  *  test            检验数据类型
- *   
+ *  save_file       存储文件 
+ *  loaded_file     加载文件
+ * 
+ * 
  * 
  */
 

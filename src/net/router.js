@@ -1,6 +1,14 @@
 /**
  * @description
- *      路由处理
+ *  路由定义
+ * 
+ * 
+ * @class Route
+ *  
+ *  @method
+ *      set             定义动作及处理函数
+ *      route           提供给外部调用, 绑定内部this
+ *  
  * 
  */
 

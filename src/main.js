@@ -29,7 +29,7 @@ const {
 
 const {
     verify: { apply_channel, verify_info },
-    mws: { prohibit_to_own }
+    mws: { prohibit_to_own, cancel_verify_timeout }
 } = require("./actions");
 
 
@@ -51,9 +51,12 @@ const {
 
     const router = new Router();
     router.set("verify/apply_channel", apply_channel);
-    router.set("verify/verify_info", verify_info);
+    router.set("rverify/verify_info", verify_info);
 
     // 准备期, 无视非验证类型的数据报
+
+    // 解除 udp head verify 超时回调
+    peer.use(cancel_verify_timeout("rverify"));
 
     // 检查: 禁止 向自己发送数据报 
     peer.use(prohibit_to_own(PORT));

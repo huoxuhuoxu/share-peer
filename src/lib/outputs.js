@@ -1,3 +1,9 @@
+/**
+ * @description
+ *  个性化输出
+ * 
+ */
+
 const util = require("util");
 
 const outpout = (...args) => {

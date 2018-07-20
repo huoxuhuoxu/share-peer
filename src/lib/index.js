@@ -6,6 +6,7 @@ if (tools.exists_keys()){
     module.exports = {
         outputs:    require("./outputs"),
         encryption: require("./encryption"),
+        Subscribe:  require("./subscribe"),
         tools
     };
 

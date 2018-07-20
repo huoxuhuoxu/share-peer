@@ -1,7 +1,15 @@
 /**
  * @description
  *  加密, 解密
+ * 
  *  
+ * @function
+ *  SHA256                  sha256加密
+ *  complete_pub_key        补全公钥
+ *  publicDecrypt           公钥验签
+ *  encrypt                 公钥加密
+ *  decrypt                 私钥解密
+ *  privateEncrypt          私钥加密
  * 
  */
 
