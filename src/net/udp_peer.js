@@ -343,7 +343,7 @@ class UdpPeer extends Udp {
 
     // 获取其他 peers 信息
     get_peers (){
-        console.log("需要广播消息, 获取其他peer信息");
+        console.log("需要, 获取其他peer信息");
         // ...... 优先返回 公网节点 / 心跳时间最近的节点 ... ...
     }
 
