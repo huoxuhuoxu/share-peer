@@ -22,8 +22,8 @@ const {
  *  @attribute
  *      trust_list      建立了隧道的可信节点信息
  *      trust_min       理论上最小需要保持的连接数
+ *      trust_wait      等待确认节点是否可信任
  *      use_list        存储中间件
- *      fail_list       失败 / 无响应的节点
  *      ready           处理加入网络状态, 未完成
  *      __send_fail     udp head verify 失败的处理
  *      
@@ -54,6 +54,7 @@ const {
  *      __generate_udp_head     生成udp消息头部
  *      __data_normalization    将接收到的udp消息数据部分统一解码
  *      __init_peers_info       读取本地存储其他节点信息
+ *      __is_ready              转换准备节点, 启动 blockchain
  *
  *       
  *  @attribute
@@ -153,19 +154,22 @@ const __data_normalization = (udp_data) => {
 const __init_peers_info = (self, port) => {
     const peers_info = loaded_file(`peers/${port}.json`);
     if (peers_info){
-        let tmp = [];
-        for (let [k, v] of Object.entries(peers_info)){
-            tmp.push([k, v]);
+        let tmp = new Set();
+        for (let [, v] of Object.entries(peers_info)){
+            v.is_pub && tmp.add(`${v.address}:${v.port}`);
         }
-        self.trust_list = new Map(tmp);
+        tmp.size && (self.trust_wait = tmp);
     }
 };
 
+const __is_ready = (self) => {
+    if (!self.verifySub.size && self.trust_list.size < self.trust_min)
+        return self.get_peers();
 
-const privater = new Map();
-{
-    privater.set("__send_fail", Symbol("send_fail"));
-}
+    // 开始启动 blockchain
+    self.ready = true;
+    // ...
+};
 
 class Udp {
 
@@ -173,8 +177,9 @@ class Udp {
         this.trust_list = new Map();
         this.trust_min = 5;
 
+        this.trust_wait = new Set();
+
         this.use_list = [];
-        this.fail_list = new Set();
         this.ready = false;
 
         this.verifySub = new Subscribe();
@@ -245,16 +250,10 @@ class Udp {
             })
         };
 
-        // log
-        console.log("发送目标: %s:%s, 动作: ", address, port, action);
-
         const message = Buffer.from(JSON.stringify(data));
         this.__socket.send(message, port, address, (err) => {
             const s = `${address}:${port}`;
-            if (err) {
-                this[privater.get("__send_fail")](s);
-                throw err;
-            }
+            if (err) throw err;
             // 所有的反馈行为不做响应超时处理
             if (res_acrion){
 
@@ -262,17 +261,17 @@ class Udp {
 
                 let timer = setTimeout(() => {
                     this.verifySub.dispatch(event_name);
-                    this[privater.get("__send_fail")](s);
+                    __is_ready(this);
                 }, 5000);
                 
                 this.verifySub.add(event_name, () => {
+                    this.trust_wait.delete(s);
                     clearTimeout(timer);
                     timer = null;
                 });
             }
             
-            
-            log("发送成功", action);
+            log("发送成功", address, port, action);
         });
     }
 
@@ -292,11 +291,6 @@ class Udp {
             is_pub,
             origin
         });
-    }
-
-    [privater.get("__send_fail")] (s){
-        this.fail_list.add(s);
-        this.get_peers();
     }
 
 }
@@ -321,26 +315,22 @@ class UdpPeer extends Udp {
 
     }
 
-    // 申请加入网络
-    send_apply (point_address = this.net.init_address){
+    run (point_address = this.net.init_address){
         if (!this.argv.c){
-
-            let targets = new Set( [ point_address ] );
-
-            if (this.trust_list.size){
-                for (let [, v] of this.trust_list){
-                    v.is_pub && targets.add(`${v.address}:${v.port}`);
-                }
-            }
-
-            for (let s of targets){
-                let [ address, port ] = s.split(":");
-                this.send({
-                    ct: rsa.privateEncrypt(Date.now().toString())
-                }, "verify/apply_channel", port, address);
+            this.trust_wait.add(point_address);
+            for (let s of this.trust_wait){
+                this.send_apply(s);
             }       
-            
         }
+    }
+
+    // 申请建立隧道
+    send_apply (s){
+        // 追加判断 ... 是否已经存在于信任列表中 ....
+        let [ address, port ] = s.split(":");
+        this.send({
+            ct: rsa.privateEncrypt(Date.now().toString())
+        }, "verify/apply_channel", port, address);
     }
 
     // 响应 - verify/apply_channel, 核对信息
@@ -353,9 +343,8 @@ class UdpPeer extends Udp {
 
     // 获取其他 peers 信息
     get_peers (){
-        if (!this.verifySub.size && this.trust_list.size < this.trust_min){
-            console.log("需要广播消息, 获取其他peer信息");
-        }
+        console.log("需要广播消息, 获取其他peer信息");
+        // ...... 优先返回 公网节点 / 心跳时间最近的节点 ... ...
     }
 
 }

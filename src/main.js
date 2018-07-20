@@ -29,7 +29,7 @@ const {
 
 const {
     verify: { apply_channel, verify_info },
-    mws: { prohibit_to_own, cancel_verify_timeout }
+    mws: { prohibit_to_own }
 } = require("./actions");
 
 
@@ -55,9 +55,6 @@ const {
 
     // 准备期, 无视非验证类型的数据报
 
-    // 解除 udp head verify 超时回调
-    peer.use(cancel_verify_timeout("rverify"));
-
     // 检查: 禁止 向自己发送数据报 
     peer.use(prohibit_to_own(PORT));
 
@@ -76,7 +73,7 @@ const {
     peer.listening(PORT);
 
     // 申请加入网络
-    peer.send_apply();
+    peer.run();
  
     
     
